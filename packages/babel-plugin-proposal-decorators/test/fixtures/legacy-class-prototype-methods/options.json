@@ -5,8 +5,14 @@
   "presets": [["env", { "targets": { "browsers": "ie 6" } }]],
   "plugins": [
     ["proposal-decorators", { "legacy": true }],
-    ["babel-plugin-polyfill-es-shims", { "method": "usage-global", "targets": {
-      "node": "current"
-    }}]
+    [
+      "babel-plugin-polyfill-es-shims",
+      {
+        "method": "usage-global",
+        "targets": {
+          "node": "current"
+        }
+      }
+    ]
   ]
 }

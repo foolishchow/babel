@@ -44,6 +44,7 @@ const JsxErrors = makeErrorTemplates(
   /* code */ ErrorCodes.SyntaxError,
   /* syntaxPlugin */ "jsx",
 );
+
 /* eslint-disable sort-keys */
 
 function isFragment(object: ?N.JSXElement): boolean {
@@ -258,6 +259,9 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       const startPos = this.state.start;
       const startLoc = this.state.startLoc;
       const name = this.jsxParseIdentifier();
+      if (this.state.start !== this.state.lastTokEnd) {
+        return name;
+      }
       if (!this.eat(tt.colon)) return name;
 
       const node = this.startNodeAt(startPos, startLoc);
@@ -371,6 +375,33 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       return this.finishNode(node, "JSXExpressionContainer");
     }
 
+    jsxParseAttributeName(): N.JSXNamespacedName {
+      const startPos = this.state.start;
+      const startLoc = this.state.startLoc;
+      const isBind = this.match(tt.colon);
+      if (isBind) {
+        const bind = this.startNodeAt(startPos, startLoc);
+        bind.name = "v-bind";
+        this.next();
+        const bindNode = this.startNodeAt(startPos, startLoc);
+        bindNode.namespace = this.finishNode(bind, "JSXIdentifier");
+        bindNode.name = this.jsxParseIdentifier();
+        return this.finishNode(bindNode, "JSXNamespacedName");
+      }
+
+      const name = this.jsxParseIdentifier();
+
+      if (this.state.start !== this.state.lastTokEnd) {
+        return name;
+      }
+      if (!this.eat(tt.colon)) return name;
+
+      const node = this.startNodeAt(startPos, startLoc);
+      node.namespace = name;
+      node.name = this.jsxParseIdentifier();
+      return this.finishNode(node, "JSXNamespacedName");
+    }
+
     // Parses following JSX attribute name-value pair.
 
     jsxParseAttribute(): N.JSXAttribute {
@@ -384,7 +415,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         this.expect(tt.braceR);
         return this.finishNode(node, "JSXSpreadAttribute");
       }
-      node.name = this.jsxParseNamespacedName();
+      node.name = this.jsxParseAttributeName();
       node.value = this.eat(tt.eq) ? this.jsxParseAttributeValue() : null;
       return this.finishNode(node, "JSXAttribute");
     }
@@ -401,12 +432,16 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         return this.finishNode(node, "JSXOpeningFragment");
       }
       node.name = this.jsxParseElementName();
+      // console.info(`jsxParseOpeningElementAt`);
+      // console.info(node.name);
       return this.jsxParseOpeningElementAfterName(node);
     }
 
     jsxParseOpeningElementAfterName(
       node: N.JSXOpeningElement,
     ): N.JSXOpeningElement {
+      // console.info(node.name);
+      // console.info(this.state.value);
       const attributes: N.JSXAttribute[] = [];
       while (!this.match(tt.slash) && !this.match(tt.jsxTagEnd)) {
         attributes.push(this.jsxParseAttribute());
@@ -439,7 +474,9 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     jsxParseElementAt(startPos: number, startLoc: Position): N.JSXElement {
       const node = this.startNodeAt(startPos, startLoc);
       const children = [];
+      // console.info(`jsxParseElementAt`);
       const openingElement = this.jsxParseOpeningElementAt(startPos, startLoc);
+      // console.info(`jsxParseElementAt end`);
       let closingElement = null;
 
       if (!openingElement.selfClosing) {
@@ -551,6 +588,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     // ==================================
 
     parseExprAtom(refExpressionErrors: ?ExpressionErrors): N.Expression {
+      // console.info(`parseExprAtom ${this.state.value}`);
       if (this.match(tt.jsxText)) {
         return this.parseLiteral(this.state.value, "JSXText");
       } else if (this.match(tt.jsxTagStart)) {

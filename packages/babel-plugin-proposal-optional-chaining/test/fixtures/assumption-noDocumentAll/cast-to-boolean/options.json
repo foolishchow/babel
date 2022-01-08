@@ -1,3 +1,6 @@
 {
-  "plugins": ["proposal-optional-chaining", "proposal-nullish-coalescing-operator"]
+  "plugins": [
+    "proposal-optional-chaining",
+    "proposal-nullish-coalescing-operator"
+  ]
 }

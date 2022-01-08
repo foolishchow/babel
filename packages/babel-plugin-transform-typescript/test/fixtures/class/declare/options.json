@@ -1,7 +1,4 @@
 {
   "BABEL_8_BREAKING": true,
-  "plugins": [
-    "transform-typescript",
-    ["syntax-decorators", { "legacy": true }]
-  ]
+  "plugins": ["transform-typescript", ["syntax-decorators", { "legacy": true }]]
 }
