@@ -389,6 +389,18 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         return this.finishNode(bindNode, "JSXNamespacedName");
       }
 
+      const isVOn = this.match(tt.at);
+      if (isVOn) {
+        console.info("v-on");
+        const vOn = this.startNodeAt(startPos, startLoc);
+        vOn.name = "v-on";
+        this.next();
+        const vOnNode = this.startNodeAt(startPos, startLoc);
+        vOnNode.namespace = this.finishNode(vOn, "JSXIdentifier");
+        vOnNode.name = this.jsxParseIdentifier();
+        return this.finishNode(vOnNode, "JSXNamespacedName");
+      }
+
       const name = this.jsxParseIdentifier();
 
       if (this.state.start !== this.state.lastTokEnd) {

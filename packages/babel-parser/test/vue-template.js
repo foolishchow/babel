@@ -1,4 +1,17 @@
 import { parse } from "../lib/index.js";
+import { writeFileSync, existsSync, mkdirSync } from "fs";
+import { resolve } from "path";
+
+const dir = resolve(
+  resolve("./packages/babel-parser/test"),
+  "vue-template-result",
+);
+const writeResult = (name, node) => {
+  if (!existsSync(dir)) {
+    mkdirSync(dir);
+  }
+  writeFileSync(`${dir}/${name}.json`, JSON.stringify(node, null, 4));
+};
 
 function getParser(code) {
   return () =>
@@ -11,16 +24,21 @@ function getParser(code) {
     });
 }
 
-describe("vue template bind", function () {
-  it("should parse", function () {
-    const node = getParser(`<div :bc="c"></div>`)();
-    console.info(JSON.stringify(node, null, 4));
+describe("vue template", function () {
+  it("should parse bind short", function () {
+    const node = getParser(`<div :userName="name"></div>`)();
+    writeResult("parse-bind", node);
   });
-});
-
-describe("vue template bind full", function () {
-  it("should parse full bind", function () {
-    const node = getParser(`<div v-bind:bcd="c"></div>`)();
-    console.info(JSON.stringify(node, null, 4));
+  it("should parse bind full", function () {
+    const node = getParser(`<div v-bind:userName="name"></div>`)();
+    writeResult("parse-bind-full", node);
+  });
+  it("should parse click short", function () {
+    const node = getParser(`<div @click="c"></div>`)();
+    writeResult("parse-click-short", node);
+  });
+  it("should parse click full", function () {
+    const node = getParser(`<div v-on:click="c"></div>`)();
+    writeResult("parse-click-full", node);
   });
 });

@@ -84,3 +84,4 @@ packages/babel-standalone/babel.min.js
 
 /test/runtime-integration/*/output.js
 /test/runtime-integration/*/absolute-output.js
+/packages/babel-parser/test/vue-template-result/
