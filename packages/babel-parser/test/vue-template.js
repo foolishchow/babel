@@ -41,4 +41,17 @@ describe("vue template", function () {
     const node = getParser(`<div v-on:click="c"></div>`)();
     writeResult("parse-click-full", node);
   });
+
+  it("should parse click full modifier", function () {
+    const node = getParser(`<div v-on:click.native="c"></div>`)();
+    writeResult("parse-click-full-modifier", node);
+  });
+  it("should parse slot short", function () {
+    const node = getParser(`<div #header="c"></div>`)();
+    writeResult("parse-slot-short", node);
+  });
+  it("should parse slot full", function () {
+    const node = getParser(`<div v-slot:header="c"></div>`)();
+    writeResult("parse-slot-full", node);
+  });
 });
