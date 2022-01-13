@@ -231,8 +231,9 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       const start = this.state.pos;
       do {
         ch = this.input.charCodeAt(++this.state.pos);
-        console.info(`jsxReadWord ${String.fromCharCode(ch)}`);
+        // console.info(`jsxReadWord ${String.fromCharCode(ch)}`);
       } while (isIdentifierChar(ch) || ch === charCodes.dash);
+      // console.info('jsxReadWord end')
       return this.finishToken(
         tt.jsxName,
         this.input.slice(start, this.state.pos),
@@ -248,7 +249,6 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       } else if (tokenIsKeyword(this.state.type)) {
         node.name = tokenLabelName(this.state.type);
       } else {
-        console.info(`jsxParseIdentifier`, this.state.value);
         this.unexpected();
       }
       this.next();
@@ -377,61 +377,127 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       return this.finishNode(node, "JSXExpressionContainer");
     }
 
-    jsxParseAttributeName(): N.JSXNamespacedName {
+    jsxParseAttributePrefix(): N.JSXIdentifier {
       const startPos = this.state.start;
       const startLoc = this.state.startLoc;
       if (this.match(tt.colon)) {
-        console.info(this.state.value);
-        const bind = this.startNodeAt(startPos, startLoc);
-        bind.name = "v-bind";
+        const node = this.startNodeAt(startPos, startLoc);
+        node.name = "v-bind";
         this.next();
-        const bindNode = this.startNodeAt(startPos, startLoc);
-        bindNode.namespace = this.finishNode(bind, "JSXIdentifier");
-        bindNode.name = this.jsxParseIdentifier();
-        return this.finishNode(bindNode, "JSXNamespacedName");
+        this.finishNode(node, "JSXIdentifier");
+        return node;
       }
-
       if (this.match(tt.at)) {
-        console.info(this.state.value);
-        console.info("v-on");
-        const eventNamespace = this.startNodeAt(startPos, startLoc);
-        eventNamespace.name = "v-on";
+        const node = this.startNodeAt(startPos, startLoc);
+        node.name = "v-on";
         this.next();
-        const eventNode = this.startNodeAt(startPos, startLoc);
-        eventNode.namespace = this.finishNode(eventNamespace, "JSXIdentifier");
-        eventNode.name = this.jsxParseIdentifier();
-        this.finishNode(eventNode, "JSXNamespacedName");
-        console.info(eventNode.name);
-        if (this.match(tt.dot)) {
-          console.info(`modifier`);
-        }
-        return eventNode;
+        this.finishNode(node, "JSXIdentifier");
+        return node;
       }
-
-      // console.info(this.state)
-      // console.info(this.state.type,tt.hash)
       if (this.match(tt.hash)) {
-        console.info("v-slot");
-        const slotNamespace = this.startNodeAt(startPos, startLoc);
-        slotNamespace.name = "v-slot";
+        const node = this.startNodeAt(startPos, startLoc);
+        node.name = "v-slot";
         this.next();
-        const slotNode = this.startNodeAt(startPos, startLoc);
-        slotNode.namespace = this.finishNode(slotNamespace, "JSXIdentifier");
-        slotNode.name = this.jsxParseIdentifier();
-        return this.finishNode(slotNode, "JSXNamespacedName");
+        this.finishNode(node, "JSXIdentifier");
+        return node;
       }
 
-      const name = this.jsxParseIdentifier();
+      return this.jsxParseIdentifier();
+    }
 
-      if (this.state.start !== this.state.lastTokEnd) {
-        return name;
+    jsxParseAttributeNameOrModifier(): N.JSXIdentifier {
+      if (this.match(tt.dot) || this.match(tt.colon)) {
+        this.next();
       }
-      if (!this.eat(tt.colon)) return name;
+      return this.jsxParseIdentifier();
+    }
 
-      const node = this.startNodeAt(startPos, startLoc);
-      node.namespace = name;
-      node.name = this.jsxParseIdentifier();
-      return this.finishNode(node, "JSXNamespacedName");
+    jsxParseAttributeName(): {
+      directive?: N.JSXIdentifier,
+      name: N.JSXIdentifier,
+      modifiers?: N.JSXIdentifier[],
+    } {
+      const startPos = this.state.start;
+      const startLoc = this.state.startLoc;
+      this.startNodeAt(startPos, startLoc);
+      let directiveNode: N.JSXIdentifier;
+      const nameAndModifier: N.JSXIdentifier[] = [];
+      const prefix = this.jsxParseAttributePrefix();
+      if (
+        prefix.name.charCodeAt(0) === charCodes.lowercaseV &&
+        prefix.name.charCodeAt(1) === charCodes.dash
+      ) {
+        directiveNode = prefix;
+      } else {
+        nameAndModifier.push(prefix);
+      }
+      while (
+        this.match(tt.dot) ||
+        this.match(tt.colon) ||
+        isIdentifierStart(this.state.code)
+      ) {
+        const node = this.jsxParseAttributeNameOrModifier();
+        nameAndModifier.push(node);
+      }
+      const name = nameAndModifier.shift();
+      return {
+        directive: directiveNode,
+        name,
+        modifiers: nameAndModifier,
+      };
+      //
+      // if (this.match(tt.colon)) {
+      //   // console.info(this.state.value);
+      //   const bind = this.startNodeAt(startPos, startLoc);
+      //   bind.name = "v-bind";
+      //   this.next();
+      //   const bindNode = this.startNodeAt(startPos, startLoc);
+      //   bindNode.namespace = this.finishNode(bind, "JSXIdentifier");
+      //   bindNode.name = this.jsxParseIdentifier();
+      //   return this.finishNode(bindNode, "JSXNamespacedName");
+      // }
+      //
+      // if (this.match(tt.at)) {
+      //   // console.info(this.state.value);
+      //   // console.info("v-on");
+      //   const eventNamespace = this.startNodeAt(startPos, startLoc);
+      //   eventNamespace.name = "v-on";
+      //   this.next();
+      //   const eventNode = this.startNodeAt(startPos, startLoc);
+      //   eventNode.namespace = this.finishNode(eventNamespace, "JSXIdentifier");
+      //   eventNode.name = this.jsxParseIdentifier();
+      //   this.finishNode(eventNode, "JSXNamespacedName");
+      //   console.info(eventNode.name);
+      //   if (this.match(tt.dot)) {
+      //     console.info(`modifier`);
+      //   }
+      //   return eventNode;
+      // }
+      //
+      // // console.info(this.state)
+      // // console.info(this.state.type,tt.hash)
+      // if (this.match(tt.hash)) {
+      //   console.info("v-slot");
+      //   const slotNamespace = this.startNodeAt(startPos, startLoc);
+      //   slotNamespace.name = "v-slot";
+      //   this.next();
+      //   const slotNode = this.startNodeAt(startPos, startLoc);
+      //   slotNode.namespace = this.finishNode(slotNamespace, "JSXIdentifier");
+      //   slotNode.name = this.jsxParseIdentifier();
+      //   return this.finishNode(slotNode, "JSXNamespacedName");
+      // }
+      //
+      // const name = this.jsxParseIdentifier();
+      //
+      // if (this.state.start !== this.state.lastTokEnd) {
+      //   return name;
+      // }
+      // if (!this.eat(tt.colon)) return name;
+      //
+      // const node = this.startNodeAt(startPos, startLoc);
+      // node.namespace = name;
+      // node.name = this.jsxParseIdentifier();
+      // return this.finishNode(node, "JSXNamespacedName");
     }
 
     // Parses following JSX attribute name-value pair.
@@ -448,7 +514,13 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         return this.finishNode(node, "JSXSpreadAttribute");
       }
       // console.info(`jsxParseAttribute ==${this.state.value}==`)
-      node.name = this.jsxParseAttributeName();
+      // node.prefix = this.jsxParseAttributePrefix()
+      const result = this.jsxParseAttributeName();
+      if (result.directive) {
+        node.directive = result.directive;
+      }
+      node.name = result.name;
+      node.modifiers = result.modifiers;
       node.value = this.eat(tt.eq) ? this.jsxParseAttributeValue() : null;
       return this.finishNode(node, "JSXAttribute");
     }
@@ -645,6 +717,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     }
 
     getTokenFromCode(code: number): void {
+      // console.info(`getTokenFromCode ${code}`)
       const context = this.curContext();
       if (context === tc.j_expr) {
         return this.jsxReadToken();
@@ -663,7 +736,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
           return this.finishToken(tt.dot, this.input.slice(start, start + 1));
         }
         if (code === charCodes.dot) {
-          console.info(`charCodes.dot`);
+          // console.info(`charCodes.dot`);
           const start = this.state.pos;
           this.state.pos++;
           return this.finishToken(tt.hash, this.input.slice(start, start + 1));
@@ -697,7 +770,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     }
 
     updateContext(prevType: TokenType): void {
-      console.info(`updateContext`, this.state.context);
+      // console.info(`updateContext`, this.state.context);
       const { context, type } = this.state;
       if (type === tt.slash && prevType === tt.jsxTagStart) {
         // do not consider JSX expr -> JSX open tag -> ... anymore
