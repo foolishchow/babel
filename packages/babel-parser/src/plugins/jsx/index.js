@@ -255,6 +255,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         this.unexpected();
       }
       this.next();
+      this.print(`│        └── jsxParseIdentifier`);
       return this.finishNode(node, "JSXIdentifier");
     }
 
@@ -680,6 +681,9 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     }
 
     getTokenFromCode(code: number): void {
+      if (code === charCodes.quotationMark) {
+        console.info("│    ∆∆∆∆∆ quotationMark");
+      }
       const context = this.curContext();
       if (context === tc.j_expr) {
         this.print(
@@ -691,6 +695,14 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         return this.jsxReadToken();
       }
 
+      if (context === tc.brace && code === charCodes.quotationMark) {
+        if (this.state.isVBind) {
+          if (this.state.isExpression) {
+            ++this.state.pos;
+            return this.finishToken(tt.braceR);
+          }
+        }
+      }
       if (context === tc.j_oTag || context === tc.j_cTag) {
         this.print(
           `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
@@ -713,8 +725,18 @@ export default (superClass: Class<Parser>): Class<Parser> =>
             return this.finishToken(tt.dot, this.input.slice(start, start + 1));
           }
 
-          // if (code === charCodes.quotationMark) {
-          // }
+          if (code === charCodes.quotationMark) {
+            if (this.state.isVBind) {
+              if (!this.state.isExpression) {
+                //   ++this.state.pos;
+                //   return this.finishToken(tt.braceR)
+                // }else{
+                this.state.isExpression = true;
+                ++this.state.pos;
+                return this.finishToken(tt.braceL);
+              }
+            }
+          }
         }
         if (isIdentifierStart(code)) {
           return this.jsxReadWord();
@@ -751,11 +773,23 @@ export default (superClass: Class<Parser>): Class<Parser> =>
 
     updateContext(prevType: TokenType): void {
       this.print(
-        `└── updateContext currType:${this.getTokenName(
+        `└── updateContext prevType:${this.getTokenName(
           this.state.type,
         )}────────────`,
       );
+      // console.info(`this.state.isVBind ${this.state.isVBind}`)
       const { context, type } = this.state;
+      if (type === tt.jsxName) {
+        this.state.isVBind = false;
+        this.state.isExpression = false;
+        if (
+          prevType === tt.colon ||
+          prevType === tt.hash ||
+          prevType === tt.at
+        ) {
+          this.state.isVBind = true;
+        }
+      }
       if (type === tt.slash && prevType === tt.jsxTagStart) {
         // do not consider JSX expr -> JSX open tag -> ... anymore
         // reconsider as closing tag context

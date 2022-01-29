@@ -31,11 +31,12 @@ describe("vue template", function () {
   });
   it("should parse bind short", function () {
     const node = getParser(`<div :userName="name.id" #scope="tpl"
-@click="openDialog">
+          @click="openDialog">
   <span  #title inline-block></span>
 </div>`)();
     writeResult("parse-bind", node);
   });
+
   it("should parse bind full", function () {
     const node = getParser(`<div v-bind:userName="name"></div>`)();
     writeResult("parse-bind-full", node);

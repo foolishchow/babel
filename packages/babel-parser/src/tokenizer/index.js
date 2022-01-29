@@ -843,7 +843,7 @@ export default class Tokenizer extends ParserErrors {
     this.print(
       `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
         code,
-      )}' ]`,
+      )}' ] - super`,
     );
     switch (code) {
       // The interpretation of a dot depends on whether it is followed
