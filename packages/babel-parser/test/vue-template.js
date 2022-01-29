@@ -25,8 +25,15 @@ function getParser(code) {
 }
 
 describe("vue template", function () {
+  it("should parse comment", function () {
+    const node = getParser(`<div><!--asdasdasd --></div>`)();
+    writeResult("parse-bind", node);
+  });
   it("should parse bind short", function () {
-    const node = getParser(`<div :userName="name"></div>`)();
+    const node = getParser(`<div :userName="name.id" #scope="tpl"
+@click="openDialog">
+  <span  #title inline-block></span>
+</div>`)();
     writeResult("parse-bind", node);
   });
   it("should parse bind full", function () {

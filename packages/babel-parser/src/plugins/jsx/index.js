@@ -180,6 +180,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         }
       }
       out += this.input.slice(chunkStart, this.state.pos++);
+      this.print(`│       └──  jsxReadString [ string:${out} ]`);
       return this.finishToken(tt.string, out);
     }
 
@@ -233,7 +234,9 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         ch = this.input.charCodeAt(++this.state.pos);
         // console.info(`jsxReadWord ${String.fromCharCode(ch)}`);
       } while (isIdentifierChar(ch) || ch === charCodes.dash);
-      // console.info('jsxReadWord end')
+      this.print(
+        `│        └── jsxReadWord ${this.input.slice(start, this.state.pos)}`,
+      );
       return this.finishToken(
         tt.jsxName,
         this.input.slice(start, this.state.pos),
@@ -412,6 +415,21 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       return this.jsxParseIdentifier();
     }
 
+    isVueBind(name: string) {
+      if (
+        name.charCodeAt(0) !== charCodes.lowercaseV ||
+        name.charCodeAt(1) !== charCodes.dash
+      ) {
+        return false;
+      }
+      const code = name.charCodeAt(2);
+      return (
+        code === charCodes.lowercaseO ||
+        code === charCodes.lowercaseB ||
+        code === charCodes.lowercaseS
+      );
+    }
+
     jsxParseAttributeName(): {
       directive?: N.JSXIdentifier,
       name: N.JSXIdentifier,
@@ -423,11 +441,9 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       let directiveNode: N.JSXIdentifier;
       const nameAndModifier: N.JSXIdentifier[] = [];
       const prefix = this.jsxParseAttributePrefix();
-      if (
-        prefix.name.charCodeAt(0) === charCodes.lowercaseV &&
-        prefix.name.charCodeAt(1) === charCodes.dash
-      ) {
+      if (this.isVueBind(prefix.name)) {
         directiveNode = prefix;
+        nameAndModifier.push(this.jsxParseAttributeNameOrModifier());
       } else {
         nameAndModifier.push(prefix);
       }
@@ -445,59 +461,6 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         name,
         modifiers: nameAndModifier,
       };
-      //
-      // if (this.match(tt.colon)) {
-      //   // console.info(this.state.value);
-      //   const bind = this.startNodeAt(startPos, startLoc);
-      //   bind.name = "v-bind";
-      //   this.next();
-      //   const bindNode = this.startNodeAt(startPos, startLoc);
-      //   bindNode.namespace = this.finishNode(bind, "JSXIdentifier");
-      //   bindNode.name = this.jsxParseIdentifier();
-      //   return this.finishNode(bindNode, "JSXNamespacedName");
-      // }
-      //
-      // if (this.match(tt.at)) {
-      //   // console.info(this.state.value);
-      //   // console.info("v-on");
-      //   const eventNamespace = this.startNodeAt(startPos, startLoc);
-      //   eventNamespace.name = "v-on";
-      //   this.next();
-      //   const eventNode = this.startNodeAt(startPos, startLoc);
-      //   eventNode.namespace = this.finishNode(eventNamespace, "JSXIdentifier");
-      //   eventNode.name = this.jsxParseIdentifier();
-      //   this.finishNode(eventNode, "JSXNamespacedName");
-      //   console.info(eventNode.name);
-      //   if (this.match(tt.dot)) {
-      //     console.info(`modifier`);
-      //   }
-      //   return eventNode;
-      // }
-      //
-      // // console.info(this.state)
-      // // console.info(this.state.type,tt.hash)
-      // if (this.match(tt.hash)) {
-      //   console.info("v-slot");
-      //   const slotNamespace = this.startNodeAt(startPos, startLoc);
-      //   slotNamespace.name = "v-slot";
-      //   this.next();
-      //   const slotNode = this.startNodeAt(startPos, startLoc);
-      //   slotNode.namespace = this.finishNode(slotNamespace, "JSXIdentifier");
-      //   slotNode.name = this.jsxParseIdentifier();
-      //   return this.finishNode(slotNode, "JSXNamespacedName");
-      // }
-      //
-      // const name = this.jsxParseIdentifier();
-      //
-      // if (this.state.start !== this.state.lastTokEnd) {
-      //   return name;
-      // }
-      // if (!this.eat(tt.colon)) return name;
-      //
-      // const node = this.startNodeAt(startPos, startLoc);
-      // node.namespace = name;
-      // node.name = this.jsxParseIdentifier();
-      // return this.finishNode(node, "JSXNamespacedName");
     }
 
     // Parses following JSX attribute name-value pair.
@@ -717,29 +680,41 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     }
 
     getTokenFromCode(code: number): void {
-      // console.info(`getTokenFromCode ${code}`)
       const context = this.curContext();
       if (context === tc.j_expr) {
+        this.print(
+          `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
+            code,
+          )}' ]`,
+        );
+        this.print(`│        └── jsxReadToken`);
         return this.jsxReadToken();
       }
 
       if (context === tc.j_oTag || context === tc.j_cTag) {
-        if (code === charCodes.numberSign) {
-          const start = this.state.pos;
-          this.state.pos++;
-          return this.finishToken(tt.hash, this.input.slice(start, start + 1));
-        }
+        this.print(
+          `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
+            code,
+          )}' ]`,
+        );
+        if (context === tc.j_oTag) {
+          if (code === charCodes.numberSign) {
+            const start = this.state.pos;
+            this.state.pos++;
+            return this.finishToken(
+              tt.hash,
+              this.input.slice(start, start + 1),
+            );
+          }
 
-        if (code === charCodes.dot) {
-          const start = this.state.pos;
-          this.state.pos++;
-          return this.finishToken(tt.dot, this.input.slice(start, start + 1));
-        }
-        if (code === charCodes.dot) {
-          // console.info(`charCodes.dot`);
-          const start = this.state.pos;
-          this.state.pos++;
-          return this.finishToken(tt.hash, this.input.slice(start, start + 1));
+          if (code === charCodes.dot) {
+            const start = this.state.pos;
+            this.state.pos++;
+            return this.finishToken(tt.dot, this.input.slice(start, start + 1));
+          }
+
+          // if (code === charCodes.quotationMark) {
+          // }
         }
         if (isIdentifierStart(code)) {
           return this.jsxReadWord();
@@ -763,6 +738,11 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         this.state.canStartJSXElement &&
         this.input.charCodeAt(this.state.pos + 1) !== charCodes.exclamationMark
       ) {
+        this.print(
+          `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
+            code,
+          )}' ]`,
+        );
         ++this.state.pos;
         return this.finishToken(tt.jsxTagStart);
       }
@@ -770,7 +750,11 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     }
 
     updateContext(prevType: TokenType): void {
-      // console.info(`updateContext`, this.state.context);
+      this.print(
+        `└── updateContext currType:${this.getTokenName(
+          this.state.type,
+        )}────────────`,
+      );
       const { context, type } = this.state;
       if (type === tt.slash && prevType === tt.jsxTagStart) {
         // do not consider JSX expr -> JSX open tag -> ... anymore
@@ -793,5 +777,8 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       } else {
         this.state.canStartJSXElement = tokenComesBeforeExpression(type);
       }
+      this.print(
+        `┌── updateContext currType:${this.getTokenName(this.state.type)}`,
+      );
     }
   };
