@@ -485,18 +485,18 @@ export default class Tokenizer extends ParserErrors {
     return Object.keys(tt).filter(key => tt[key] === tokenType)[0];
   }
 
-  print(tpl: string) {
-    if (this.isEslintEnv == undefined) {
-      // console.info(process.argv)
-      this.isEslintEnv = process.argv.some(s => s.includes("eslint"));
-    }
-    if (!this.isEslintEnv) {
-      console.info(tpl);
-    }
-  }
+  // print(tpl: string) {
+  //   if (this.isEslintEnv == undefined) {
+  //     // console.info(process.argv)
+  //     this.isEslintEnv = process.argv.some(s => s.includes("eslint"));
+  //   }
+  //   if (!this.isEslintEnv) {
+  //     console.info(tpl);
+  //   }
+  // }
 
   finishToken(type: TokenType, val: any): void {
-    this.print(`│    ø  finishToken [token:${this.getTokenName(type)}]`);
+    // this.print(`│    ø  finishToken [token:${this.getTokenName(type)}]`);
     this.state.end = this.state.pos;
     const prevType = this.state.type;
     this.state.type = type;
@@ -840,11 +840,11 @@ export default class Tokenizer extends ParserErrors {
   }
 
   getTokenFromCode(code: number): void {
-    this.print(
-      `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
-        code,
-      )}' ] - super`,
-    );
+    // this.print(
+    //   `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
+    //     code,
+    //   )}' ] - super`,
+    // );
     switch (code) {
       // The interpretation of a dot depends on whether it is followed
       // by a digit or another two dots.

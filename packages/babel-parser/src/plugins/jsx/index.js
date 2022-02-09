@@ -180,7 +180,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         }
       }
       out += this.input.slice(chunkStart, this.state.pos++);
-      this.print(`│       └──  jsxReadString [ string:${out} ]`);
+      // this.print(`│       └──  jsxReadString [ string:${out} ]`);
       return this.finishToken(tt.string, out);
     }
 
@@ -234,9 +234,9 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         ch = this.input.charCodeAt(++this.state.pos);
         // console.info(`jsxReadWord ${String.fromCharCode(ch)}`);
       } while (isIdentifierChar(ch) || ch === charCodes.dash);
-      this.print(
-        `│        └── jsxReadWord ${this.input.slice(start, this.state.pos)}`,
-      );
+      // this.print(
+      //   `│        └── jsxReadWord ${this.input.slice(start, this.state.pos)}`,
+      // );
       return this.finishToken(
         tt.jsxName,
         this.input.slice(start, this.state.pos),
@@ -255,7 +255,7 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         this.unexpected();
       }
       this.next();
-      this.print(`│        └── jsxParseIdentifier`);
+      // this.print(`│        └── jsxParseIdentifier`);
       return this.finishNode(node, "JSXIdentifier");
     }
 
@@ -575,6 +575,12 @@ export default (superClass: Class<Parser>): Class<Parser> =>
               this.next();
               if (this.match(tt.ellipsis)) {
                 children.push(this.jsxParseSpreadChild(node));
+              } else if (this.match(tt.braceL)) {
+                this.next();
+                children.push(
+                  this.jsxParseExpressionContainer(node, tc.j_expr),
+                );
+                this.next();
               } else {
                 children.push(
                   this.jsxParseExpressionContainer(node, tc.j_expr),
@@ -681,17 +687,17 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     }
 
     getTokenFromCode(code: number): void {
-      if (code === charCodes.quotationMark) {
-        console.info("│    ∆∆∆∆∆ quotationMark");
-      }
+      // if (code === charCodes.quotationMark) {
+      //   console.info("│    ∆∆∆∆∆ quotationMark");
+      // }
       const context = this.curContext();
       if (context === tc.j_expr) {
-        this.print(
-          `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
-            code,
-          )}' ]`,
-        );
-        this.print(`│        └── jsxReadToken`);
+        // this.print(
+        //   `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
+        //     code,
+        //   )}' ]`,
+        // );
+        // this.print(`│        └── jsxReadToken`);
         return this.jsxReadToken();
       }
 
@@ -704,11 +710,11 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         }
       }
       if (context === tc.j_oTag || context === tc.j_cTag) {
-        this.print(
-          `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
-            code,
-          )}' ]`,
-        );
+        // this.print(
+        //   `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
+        //     code,
+        //   )}' ]`,
+        // );
         if (context === tc.j_oTag) {
           if (code === charCodes.numberSign) {
             const start = this.state.pos;
@@ -760,11 +766,11 @@ export default (superClass: Class<Parser>): Class<Parser> =>
         this.state.canStartJSXElement &&
         this.input.charCodeAt(this.state.pos + 1) !== charCodes.exclamationMark
       ) {
-        this.print(
-          `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
-            code,
-          )}' ]`,
-        );
+        // this.print(
+        //   `│    └─ getTokenFromCode [ code:'${code}',value:'${String.fromCharCode(
+        //     code,
+        //   )}' ]`,
+        // );
         ++this.state.pos;
         return this.finishToken(tt.jsxTagStart);
       }
@@ -772,11 +778,11 @@ export default (superClass: Class<Parser>): Class<Parser> =>
     }
 
     updateContext(prevType: TokenType): void {
-      this.print(
-        `└── updateContext prevType:${this.getTokenName(
-          this.state.type,
-        )}────────────`,
-      );
+      // this.print(
+      //   `└── updateContext prevType:${this.getTokenName(
+      //     this.state.type,
+      //   )}────────────`,
+      // );
       // console.info(`this.state.isVBind ${this.state.isVBind}`)
       const { context, type } = this.state;
       if (type === tt.jsxName) {
@@ -811,8 +817,8 @@ export default (superClass: Class<Parser>): Class<Parser> =>
       } else {
         this.state.canStartJSXElement = tokenComesBeforeExpression(type);
       }
-      this.print(
-        `┌── updateContext currType:${this.getTokenName(this.state.type)}`,
-      );
+      // this.print(
+      //   `┌── updateContext currType:${this.getTokenName(this.state.type)}`,
+      // );
     }
   };

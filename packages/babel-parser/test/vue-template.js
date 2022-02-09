@@ -25,10 +25,10 @@ function getParser(code) {
 }
 
 describe("vue template", function () {
-  it("should parse comment", function () {
-    const node = getParser(`<div><!--asdasdasd --></div>`)();
-    writeResult("parse-bind", node);
-  });
+  // it("should parse comment", function () {
+  //   const node = getParser(`<div><!--asdasdasd --></div>`)();
+  //   writeResult("parse-bind", node);
+  // });
   it("should parse bind short", function () {
     const node = getParser(`<div :userName="name.id" #scope="tpl"
           @click="openDialog">
@@ -36,7 +36,6 @@ describe("vue template", function () {
 </div>`)();
     writeResult("parse-bind", node);
   });
-
   it("should parse bind full", function () {
     const node = getParser(`<div v-bind:userName="name"></div>`)();
     writeResult("parse-bind-full", node);
@@ -49,7 +48,6 @@ describe("vue template", function () {
     const node = getParser(`<div v-on:click="c"></div>`)();
     writeResult("parse-click-full", node);
   });
-
   it("should parse click full modifier", function () {
     const node = getParser(`<div v-on:click.native="c"></div>`)();
     writeResult("parse-click-full-modifier", node);
@@ -65,5 +63,13 @@ describe("vue template", function () {
   it("should parse slot full", function () {
     const node = getParser(`<div v-slot:header="c"></div>`)();
     writeResult("parse-slot-full", node);
+  });
+  it("should parse slot full", function () {
+    const node = getParser(`<div v-slot:header="c"></div>`)();
+    writeResult("parse-slot-full", node);
+  });
+  it("should parse text", function () {
+    const node = getParser(`<div>hahaha{{item.name}}</div>`)();
+    writeResult("parse-text", node);
   });
 });
